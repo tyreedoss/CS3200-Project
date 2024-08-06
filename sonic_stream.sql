@@ -68,13 +68,13 @@ CREATE TABLE IF NOT EXISTS listener_artist(
 );
 
 CREATE TABLE IF NOT EXISTS playlist(
-    id INT,
-    playlist_number INT AUTO_INCREMENT PRIMARY KEY,
+    listener_id INT,
+    id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(50),
     description VARCHAR(500),
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (id) REFERENCES listener(id)
+    FOREIGN KEY (listener_id) REFERENCES listener(id)
 );
 
 CREATE TABLE IF NOT EXISTS revenue(
@@ -98,11 +98,54 @@ CREATE TABLE IF NOT EXISTS song(
 
 CREATE TABLE IF NOT EXISTS playlist_song(
     playlist_id INT,
-    song INT,
-    PRIMARY KEY (playlist_id, song),
-    CONSTRAINT fk_10 FOREIGN KEY (playlist_id) REFERENCES
-        playlist(id, playlist_number)
+    song_id INT,
+    PRIMARY KEY (playlist_id, song_id),
+    CONSTRAINT fk_10 FOREIGN KEY (playlist_id) REFERENCES playlist(id)
         ON UPDATE cascade ON DELETE CASCADE,
-    CONSTRAINT fk_11 FOREIGN KEY (song) REFERENCES song(id)
+    CONSTRAINT fk_11 FOREIGN KEY (song_id) REFERENCES song(id)
         ON UPDATE cascade ON DELETE cascade
 );
+
+CREATE TABLE IF NOT EXISTS review(
+    id INTEGER AUTO_INCREMENT PRIMARY KEY,
+    song_id INTEGER,
+    listener_id INTEGER,
+    text VARCHAR(2500),
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_12 FOREIGN KEY (song_ID) REFERENCES song(id)
+        ON UPDATE cascade ON DELETE cascade,
+    foreign key (listener_id) REFERENCES listener(id)
+);
+
+CREATE TABLE IF NOT EXISTS artist_revenue(
+    artist_id INT,
+    revenue_id INT,
+    PRIMARY KEY (artist_id, revenue_id),
+    CONSTRAINT fk_13 FOREIGN KEY (artist_id) REFERENCES artist(id)
+        ON UPDATE cascade ON DELETE CASCADE,
+    CONSTRAINT fk_14 FOREIGN KEY (revenue_id) REFERENCES revenue(id)
+        ON UPDATE cascade ON DELETE cascade
+);
+
+CREATE TABLE IF NOT EXISTS artist_song(
+    artist_id INT,
+    song_id INT,
+    PRIMARY KEY (artist_id, song_id),
+    CONSTRAINT fk_15 FOREIGN KEY (artist_id) REFERENCES artist(id)
+        ON UPDATE cascade ON DELETE CASCADE,
+    CONSTRAINT fk_16 FOREIGN KEY (song_id) REFERENCES song(id)
+        ON UPDATE cascade ON DELETE cascade
+);
+
+CREATE TABLE IF NOT EXISTS advertisement(
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(60),
+    company VARCHAR(60),
+    target_location VARCHAR(100),
+    target_age VARCHAR(50),
+    status VARCHAR(60), -- not sure if we want this as a boolean
+    revenue_id INT,
+    FOREIGN KEY (revenue_id) REFERENCES revenue(id)
+);
+
