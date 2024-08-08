@@ -1,40 +1,43 @@
 DROP DATABASE sonic_stream;
 
-CREATE DATABASE sonic_stream;
+-- create the database of our app
+CREATE DATABASE IF NOT EXISTS sonic_stream;
 USE sonic_stream;
 
 CREATE TABLE IF NOT EXISTS listener
 (
-    id integer AUTO_INCREMENT PRIMARY KEY ,
+    id INT AUTO_INCREMENT PRIMARY KEY,
     username varchar(255) UNIQUE NOT NULL,
     password varchar(255) NOT NULL,
-    dob DATE,
-    location varchar(255)
+    date_of_birth DATE NOT NULL,
+    location varchar(255) NOT NULL
 );
 
-INSERT INTO listener (username, password, dob, location) VALUES
+INSERT INTO listener (username, password, date_of_birth, location) VALUES
     ('hpotter', 'asdf1234', DATE('2000-01-01'), 'hogwarts');
-INSERT INTO listener (username, password, dob, location) VALUES
+INSERT INTO listener (username, password, date_of_birth, location) VALUES
     ('jraiden', 'jacktheripper', DATE('2000-01-06'), 'america');
-INSERT INTO listener (username, password, dob, location) VALUES
+INSERT INTO listener (username, password, date_of_birth, location) VALUES
     ('wsartorio', 'myrealpassword1234', DATE('2005-02-02'), 'boston');
 
--- i figured that order of who friended who does not matter (unlike follows)
-CREATE TABLE IF NOT EXISTS friend(
+CREATE TABLE IF NOT EXISTS friends
+(
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-    friend_1 INT,
-    friend_2 INT,
-    PRIMARY KEY (friend_1, friend_2),
-    CONSTRAINT fk_01 FOREIGN KEY (friend_1) REFERENCES listener(id)
+    userID INT,
+    friendID INT,
+    PRIMARY KEY (userID, friendID),
+    CONSTRAINT fk_01 FOREIGN KEY (userID) REFERENCES listener(id)
         ON UPDATE cascade,
-    CONSTRAINT fk_02 FOREIGN KEY (friend_2) REFERENCES listener(id)
+    CONSTRAINT fk_02 FOREIGN KEY (friendID) REFERENCES listener(id)
         ON UPDATE cascade
 );
 
-INSERT INTO friend (friend_1, friend_2) VALUES (1, 2);
-INSERT INTO friend (friend_1, friend_2) VALUES (2, 3);
+INSERT INTO friends (userID, friendID) VALUES (1, 2);
+INSERT INTO friends (userID, friendID) VALUES (2, 3);
+INSERT INTO friends (userID, friendID) VALUES (3,2);
 
-CREATE TABLE IF NOT EXISTS concert(
+CREATE TABLE IF NOT EXISTS concert
+(
     id INT AUTO_INCREMENT PRIMARY KEY,
     venue VARCHAR(60),
     event_date DATE
@@ -45,7 +48,8 @@ INSERT INTO concert (venue, event_date) VALUES
 INSERT INTO concert (venue, event_date) VALUES
     ('international space station', DATE('2034-08-11'));
 
-CREATE TABLE IF NOT EXISTS listener_concert(
+CREATE TABLE IF NOT EXISTS listener_concert
+(
     listener_id INT,
     concert_id INT,
     PRIMARY KEY (listener_id, concert_id),
@@ -55,10 +59,11 @@ CREATE TABLE IF NOT EXISTS listener_concert(
         ON UPDATE cascade ON DELETE cascade
 );
 
-CREATE TABLE IF NOT EXISTS artist(
+CREATE TABLE IF NOT EXISTS artist
+(
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(50),
-    bio VARCHAR(2500)
+    name VARCHAR(50) NOT NULL,
+    bio VARCHAR(2500) NOT NULL
 );
 
 INSERT INTO artist(name, bio) VALUES
@@ -82,7 +87,6 @@ INSERT INTO artist_concert(artist_id, concert_id) VALUES (2, 2);
 CREATE TABLE IF NOT EXISTS listener_artist(
     listener_id INT,
     artist_id INT,
-    playcount INT,
     PRIMARY KEY (listener_id, artist_id),
     CONSTRAINT fk_07 FOREIGN KEY (listener_id) REFERENCES listener(id)
         ON UPDATE cascade ON DELETE CASCADE,
@@ -90,30 +94,36 @@ CREATE TABLE IF NOT EXISTS listener_artist(
         ON UPDATE cascade ON DELETE cascade
 );
 
-INSERT INTO listener_artist(listener_id, artist_id, playcount) VALUES
-    (1, 1, 2049);
-INSERT INTO listener_artist(listener_id, artist_id, playcount) VALUES
-    (2, 2, 65038);
+INSERT INTO listener_artist(listener_id, artist_id) VALUES
+    (1, 1);
+INSERT INTO listener_artist(listener_id, artist_id) VALUES
+    (2, 2);
 
-CREATE TABLE IF NOT EXISTS playlist(
+CREATE TABLE IF NOT EXISTS playlist
+(
     listener_id INT,
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(50),
-    description VARCHAR(500),
+    playlist_number INT,
+    name VARCHAR(50) NOT NULL,
+    description VARCHAR(500) NOT NULL,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY(listener_id, playlist_number),
     FOREIGN KEY (listener_id) REFERENCES listener(id)
+        ON UPDATE cascade
 );
 
-INSERT INTO playlist(listener_id, name, description) VALUES
-    (1, 'spell training', 'for defense against the dark arts');
-INSERT INTO playlist(listener_id, name, description) VALUES
-    (2, 'destroying metal gears', 'RULES OF NATURE');
+INSERT INTO playlist(listener_id, playlist_number, name, description) VALUES
+    (1, 1, 'spell training', 'for defense against the dark arts');
+INSERT INTO playlist(listener_id, playlist_number, name, description) VALUES
+    (2, 1, 'destroying metal gears', 'RULES OF NATURE');
+INSERT INTO playlist(listener_id, playlist_number, name, description) VALUES
+    (2, 2, 'chill music', 'relaxing vibes');
 
-CREATE TABLE IF NOT EXISTS revenue(
+CREATE TABLE IF NOT EXISTS revenue
+(
     id INT AUTO_INCREMENT PRIMARY KEY,
-    song_payout DOUBLE,
-    company_revenue DOUBLE,
+    song_payout DECIMAL NOT NULL,
+    company_revenue DECIMAL NOT NULL,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -123,54 +133,56 @@ INSERT INTO revenue(song_payout, company_revenue) VALUES
 INSERT INTO revenue(song_payout, company_revenue) VALUES
     (20, 100.46);
 
-CREATE TABLE IF NOT EXISTS song(
+CREATE TABLE IF NOT EXISTS song
+(
     id INT AUTO_INCREMENT PRIMARY KEY,
     album VARCHAR(70),
-    title VARCHAR(50),
+    title VARCHAR(50) NOT NULL,
     genre VARCHAR(50),
-    duration TIME,
-    release_date DATE,
+    duration TIME NOT NULL,
+    release_date DATE DEFAULT (CURDATE()),
     revenue_id INT,
     FOREIGN KEY (revenue_id) REFERENCES revenue(id)
 );
 
-INSERT INTO song(album, title, genre, duration, release_date, revenue_id) VALUES
-    ('asdf', 'asd', 'post-apocalyptic egyptian punk rock', TIME('00:03:36'),
-     DATE('2049-03-29'), 1);
-INSERT INTO song(album, title, genre, duration, release_date, revenue_id) VALUES
-    ('it has to be this way', 'MGR OST', 'heavy metal', TIME('00:02:56'),
-     DATE('2013-02-20'), 1);
+INSERT INTO song(album, title, genre, duration, revenue_id) VALUES
+    ('asdf', 'asd', 'post-apocalyptic egyptian punk rock', TIME('00:03:36'), 1);
+INSERT INTO song(album, title, genre, duration, revenue_id) VALUES
+    ('it has to be this way', 'MGR OST', 'heavy metal', TIME('00:02:56'), 1);
 
 CREATE TABLE IF NOT EXISTS playlist_song(
-    playlist_id INT,
+    listenerID INT,
+    playlist_number INT,
     song_id INT,
-    PRIMARY KEY (playlist_id, song_id),
-    CONSTRAINT fk_10 FOREIGN KEY (playlist_id) REFERENCES playlist(id)
+    PRIMARY KEY (listenerID, playlist_number, song_id),
+    CONSTRAINT fk_10 FOREIGN KEY (listenerID, playlist_number) REFERENCES playlist(listener_id, playlist_number)
         ON UPDATE cascade ON DELETE CASCADE,
     CONSTRAINT fk_11 FOREIGN KEY (song_id) REFERENCES song(id)
         ON UPDATE cascade ON DELETE cascade
 );
 
-INSERT INTO playlist_song(playlist_id, song_id) VALUES (1, 1);
-INSERT INTO playlist_song(playlist_id, song_id) VALUES (2, 2);
+INSERT INTO playlist_song(listenerID, playlist_number, song_id) VALUES (1, 1, 1);
+INSERT INTO playlist_song(listenerID, playlist_number, song_id) VALUES (2, 2, 2);
+INSERT INTO playlist_song(listenerID, playlist_number, song_id) VALUES (2, 1, 1);
 
-CREATE TABLE IF NOT EXISTS review(
-    id INTEGER AUTO_INCREMENT,
+CREATE TABLE IF NOT EXISTS review
+(
+    review_num INTEGER NOT NULL,
     song_id INTEGER,
     listener_id INTEGER,
-    text VARCHAR(2500),
+    text VARCHAR(2500) NOT NULL,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (id, song_id),
+    PRIMARY KEY (song_id, review_num),
     CONSTRAINT fk_12 FOREIGN KEY (song_ID) REFERENCES song(id)
         ON UPDATE cascade ON DELETE cascade,
     foreign key (listener_id) REFERENCES listener(id)
 );
 
-INSERT INTO review(song_id, listener_id, text) VALUES
-    (1, 3, 'absolute masterpiece');
-INSERT INTO review(song_id, listener_id, text) VALUES
-    (1, 2, 'id get married with this in the background');
+INSERT INTO review(song_id, review_num, listener_id, text) VALUES
+    (1, 1, 3, 'absolute masterpiece');
+INSERT INTO review(song_id, review_num, listener_id, text) VALUES
+    (1, 2, 2, 'id get married with this in the background');
 
 CREATE TABLE IF NOT EXISTS artist_revenue(
     artist_id INT,
@@ -200,11 +212,11 @@ INSERT INTO artist_song(artist_id, song_id) VALUES (1, 2);
 
 CREATE TABLE IF NOT EXISTS advertisement(
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(60),
-    company VARCHAR(60),
+    name VARCHAR(60) UNIQUE NOT NULL,
+    company VARCHAR(60) NOT NULL,
     target_location VARCHAR(100),
     target_age VARCHAR(50),
-    status VARCHAR(60), -- not sure if we want this as a boolean
+    status VARCHAR(60),
     revenue_id INT,
     FOREIGN KEY (revenue_id) REFERENCES revenue(id)
 );
@@ -217,7 +229,7 @@ INSERT INTO advertisement(name, company, target_location, target_age, status, re
 CREATE TABLE IF NOT EXISTS listener_song(
     listener_id INT,
     song_id INT,
-    playcount INT,
+    playcount INT NOT NULL,
     liked_on DATETIME DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (listener_id, song_id),
     CONSTRAINT fk_17 FOREIGN KEY (listener_id) REFERENCES listener(id)
